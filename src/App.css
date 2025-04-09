@@ -1,0 +1,9 @@
+/* Custom styles beyond Tailwind CSS */
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Add custom animations or styles not covered by Tailwind here */
