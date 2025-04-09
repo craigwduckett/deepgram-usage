@@ -12,6 +12,23 @@ export interface UsageData {
   endDate: string;
 }
 
+export interface RequestData {
+  request_id: string;
+  created: string;
+  path: string;
+  api_key_id: string;
+  response: any;
+  code: number;
+  deployment: string;
+  callback: string;
+}
+
+export interface RequestsListResponse {
+  page: number;
+  limit: number;
+  requests: RequestData[];
+}
+
 export const initDeepgram = (key: string): void => {
   // Store the API key for proxy requests
   apiKey = key;
@@ -86,6 +103,83 @@ export const getDeepgramUsage = async (startDate: Date, endDate: Date): Promise<
     };
   } catch (error) {
     console.error('Error fetching Deepgram usage:', error);
+    throw error;
+  }
+};
+
+export const getDeepgramRequests = async (
+  startDate: Date, 
+  endDate: Date, 
+  page: number = 1, 
+  limit: number = 10
+): Promise<RequestsListResponse> => {
+  if (!apiKey) {
+    throw new Error('Deepgram client not initialized. Call initDeepgram first.');
+  }
+
+  try {
+    // Format dates for API request
+    const formattedStartDate = startDate.toISOString().split('T')[0];
+    const formattedEndDate = endDate.toISOString().split('T')[0];
+
+    // First, get the projects
+    const projectsResponse = await fetch('/api/deepgram/v1/projects', {
+      headers: {
+        'x-api-key': apiKey,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!projectsResponse.ok) {
+      throw new Error(`Failed to get projects: ${projectsResponse.statusText}`);
+    }
+
+    const projectsData = await projectsResponse.json();
+    // Use the first project in the list
+    const projectId = projectsData.projects[0].project_id;
+
+    // Now get the requests information
+    const requestsResponse = await fetch(
+      `/api/deepgram/v1/projects/${projectId}/requests?start=${formattedStartDate}&end=${formattedEndDate}&page=${page}&limit=${limit}`,
+      {
+        headers: {
+          'x-api-key': apiKey,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    if (!requestsResponse.ok) {
+      throw new Error(`Deepgram API Error: ${requestsResponse.statusText}`);
+    }
+
+    return await requestsResponse.json();
+  } catch (error) {
+    console.error('Error fetching Deepgram requests:', error);
+    throw error;
+  }
+};
+
+export const getDeepgramRequestDetails = async (projectId: string, requestId: string): Promise<RequestData> => {
+  if (!apiKey) {
+    throw new Error('Deepgram client not initialized. Call initDeepgram first.');
+  }
+
+  try {
+    const response = await fetch(`/api/deepgram/v1/projects/${projectId}/requests/${requestId}`, {
+      headers: {
+        'x-api-key': apiKey,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Deepgram API Error: ${response.statusText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching Deepgram request details:', error);
     throw error;
   }
 };

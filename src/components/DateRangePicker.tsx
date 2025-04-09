@@ -52,9 +52,9 @@ export function DateRangePicker({ onSubmit }: DateRangePickerProps) {
       
       <Button 
         type="submit" 
-        variant="default"
+        variant="outline"
         size="default"
-        className="mt-2 w-full"
+        className="w-full"
       >
         Get Usage Data
       </Button>

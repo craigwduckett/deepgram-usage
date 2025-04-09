@@ -4,9 +4,14 @@ import { DateRangePicker } from './components/DateRangePicker';
 import { Footer } from './components/Footer';
 import { NavBar } from './components/NavBar';
 import { UsageDisplay } from './components/UsageDisplay';
+import RequestsList from './components/RequestsList';
 import { Button } from './components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './components/ui/card';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from './components/ui/tabs';
 import { UsageData, getDeepgramUsage, initDeepgram } from './lib/deepgram';
+
+// Define the tab types
+type TabType = 'usage' | 'requests';
 
 function App() {
   const [apiKey, setApiKey] = useState<string>('');
@@ -14,6 +19,8 @@ function App() {
   const [usageData, setUsageData] = useState<UsageData | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<TabType>('usage');
+  const [dateRange, setDateRange] = useState<{ startDate: Date; endDate: Date } | null>(null);
 
   // Check for API key in environment variables on component mount
   useEffect(() => {
@@ -53,6 +60,7 @@ function App() {
 
     setIsLoading(true);
     setError(null);
+    setDateRange({ startDate, endDate });
 
     try {
       const data = await getDeepgramUsage(startDate, endDate);
@@ -89,14 +97,14 @@ function App() {
           <div className="flex flex-col lg:flex-row lg:gap-6">
             {/* Left Column - Configuration (25% width) */}
             <div className="lg:w-1/4 space-y-8 mb-8 lg:mb-0">
-              <Card className="overflow-hidden border-0 shadow-lg">
-                <CardHeader className="pb-6">
+              <Card className="overflow-hidden shadow-lg">
+                <CardHeader>
                   <CardTitle className="text-2xl">API Key Configuration</CardTitle>
                   <CardDescription>
                     Enter your Deepgram API key to start tracking usage metrics
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="p-6">
+                <CardContent>
                   {!isApiKeySet ? (
                     <form onSubmit={handleApiKeySubmit} className="flex flex-col space-y-4">
                       <input
@@ -143,26 +151,59 @@ function App() {
                 </CardContent>
               </Card>
 
-              <Card className="overflow-hidden border-0 shadow-lg">
-                <CardHeader className="bg-gradient-to-r from-indigo-50 to-blue-50 pb-6">
+              <Card className="overflow-hiddenshadow-lg">
+                <CardHeader>
                   <CardTitle className="text-2xl">Date Range</CardTitle>
                   <CardDescription>
                     Select the time period for usage data analysis
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="p-6">
+                <CardContent>
                   <DateRangePicker onSubmit={handleDateRangeSubmit} />
                 </CardContent>
               </Card>
             </div>
 
-            {/* Right Column - Usage Data (75% width) */}
+            {/* Right Column - Data Display (75% width) */}
             <div className="lg:w-3/4">
-              <UsageDisplay 
-                usageData={usageData}
-                isLoading={isLoading}
-                error={error}
-              />
+              {isApiKeySet && dateRange ? (
+                <Tabs 
+                  defaultValue="usage" 
+                  value={activeTab}
+                  onValueChange={(value) => setActiveTab(value as TabType)}
+                  className="mb-6"
+                >
+                  <div className="flex justify-center">
+                    <TabsList className="mb-4">
+                      <TabsTrigger value="usage">Usage Summary</TabsTrigger>
+                      <TabsTrigger value="requests">Request Details</TabsTrigger>
+                    </TabsList>
+                  </div>
+                  
+                  <TabsContent value="usage">
+                    <UsageDisplay 
+                      usageData={usageData}
+                      isLoading={isLoading}
+                      error={error}
+                    />
+                  </TabsContent>
+                  
+                  <TabsContent value="requests">
+                    {dateRange && (
+                      <RequestsList 
+                        startDate={dateRange.startDate}
+                        endDate={dateRange.endDate}
+                      />
+                    )}
+                  </TabsContent>
+                </Tabs>
+              ) : (
+                <UsageDisplay 
+                  usageData={usageData}
+                  isLoading={isLoading}
+                  error={error}
+                />
+              )}
             </div>
           </div>
         </div>

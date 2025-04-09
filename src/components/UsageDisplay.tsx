@@ -18,7 +18,7 @@ interface UsageCardProps {
 
 function UsageCard({ title, value, description, icon, className, trend }: UsageCardProps) {
   return (
-    <Card className={cn("h-full overflow-hidden transition-all hover:shadow-md", className)}>
+    <Card className={cn("overflow-hidden", className)}>
       <CardHeader className="space-y-0 pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base font-medium">{title}</CardTitle>
