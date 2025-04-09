@@ -72,11 +72,11 @@ function App() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-gradient-to-br from-slate-50 to-gray-100">
+    <div className="flex min-h-screen flex-col bg-background">
       <NavBar />
       
       <main className="flex-1 py-12">
-        <div className="container mx-auto max-w-6xl px-6">
+        <div className="container mx-auto max-w-7xl px-6">
           <div className="mb-10 text-center">
             <h1 className="text-4xl font-bold text-gray-800">
               <span className="bg-gradient-to-r from-indigo-600 to-blue-500 bg-clip-text text-transparent">Deepgram</span> Usage Dashboard
@@ -86,77 +86,85 @@ function App() {
             </p>
           </div>
 
-          <Card className="mb-8 overflow-hidden border-0 shadow-lg">
-            <CardHeader className="bg-gradient-to-r from-indigo-50 to-blue-50 pb-6">
-              <CardTitle className="text-2xl">API Key Configuration</CardTitle>
-              <CardDescription>
-                Enter your Deepgram API key to start tracking usage metrics
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-6">
-              {!isApiKeySet ? (
-                <form onSubmit={handleApiKeySubmit} className="flex flex-col space-y-4 sm:flex-row sm:space-x-4 sm:space-y-0">
-                  <input
-                    type="password"
-                    value={apiKey}
-                    onChange={(e) => setApiKey(e.target.value)}
-                    placeholder="Enter Deepgram API Key"
-                    className="flex-1 rounded-lg border border-gray-300 px-4 py-2.5 shadow-sm transition-all focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:ring-opacity-50"
-                    required
-                  />
-                  <Button 
-                    type="submit" 
-                    className="rounded-lg bg-gradient-to-r from-indigo-600 to-blue-500 px-6 py-2.5 font-medium text-white shadow-md transition-all hover:shadow-lg"
-                  >
-                    Set API Key
-                  </Button>
-                </form>
-              ) : (
-                <div className="flex flex-col items-start justify-between space-y-4 sm:flex-row sm:items-center sm:space-y-0">
-                  <span className="flex items-center text-green-600">
-                    <svg 
-                      xmlns="http://www.w3.org/2000/svg" 
-                      className="mr-2 h-6 w-6" 
-                      viewBox="0 0 20 20" 
-                      fill="currentColor"
-                    >
-                      <path 
-                        fillRule="evenodd" 
-                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" 
-                        clipRule="evenodd" 
+          <div className="flex flex-col lg:flex-row lg:gap-6">
+            {/* Left Column - Configuration (25% width) */}
+            <div className="lg:w-1/4 space-y-8 mb-8 lg:mb-0">
+              <Card className="overflow-hidden border-0 shadow-lg">
+                <CardHeader className="pb-6">
+                  <CardTitle className="text-2xl">API Key Configuration</CardTitle>
+                  <CardDescription>
+                    Enter your Deepgram API key to start tracking usage metrics
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="p-6">
+                  {!isApiKeySet ? (
+                    <form onSubmit={handleApiKeySubmit} className="flex flex-col space-y-4">
+                      <input
+                        type="password"
+                        value={apiKey}
+                        onChange={(e) => setApiKey(e.target.value)}
+                        placeholder="Enter Deepgram API Key"
+                        className="flex-1 rounded-lg border border-gray-300 px-4 py-2.5 shadow-sm transition-all focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:ring-opacity-50"
+                        required
                       />
-                    </svg>
-                    <span className="text-lg font-medium">API Key set successfully</span>
-                  </span>
-                  <Button 
-                    variant="outline"
-                    className="rounded-lg border border-gray-300 bg-white px-4 py-2 font-medium text-gray-700 shadow-sm transition-all hover:bg-gray-50"
-                    onClick={resetApiKey}
-                  >
-                    Reset API Key
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                      <Button 
+                        type="submit" 
+                        className="rounded-lg bg-gradient-to-r from-indigo-600 to-blue-500 px-6 py-2.5 font-medium text-white shadow-md transition-all hover:shadow-lg"
+                      >
+                        Set API Key
+                      </Button>
+                    </form>
+                  ) : (
+                    <div className="flex flex-col items-start space-y-4">
+                      <span className="flex items-center text-green-600">
+                        <svg 
+                          xmlns="http://www.w3.org/2000/svg" 
+                          className="mr-2 h-6 w-6" 
+                          viewBox="0 0 20 20" 
+                          fill="currentColor"
+                        >
+                          <path 
+                            fillRule="evenodd" 
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" 
+                            clipRule="evenodd" 
+                          />
+                        </svg>
+                        <span className="text-lg font-medium">API Key set successfully</span>
+                      </span>
+                      <Button 
+                        variant="outline"
+                        className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 font-medium text-gray-700 shadow-sm transition-all hover:bg-gray-50"
+                        onClick={resetApiKey}
+                      >
+                        Reset API Key
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
 
-          <Card className="mb-8 overflow-hidden border-0 shadow-lg">
-            <CardHeader className="bg-gradient-to-r from-indigo-50 to-blue-50 pb-6">
-              <CardTitle className="text-2xl">Date Range</CardTitle>
-              <CardDescription>
-                Select the time period for usage data analysis
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-6">
-              <DateRangePicker onSubmit={handleDateRangeSubmit} />
-            </CardContent>
-          </Card>
+              <Card className="overflow-hidden border-0 shadow-lg">
+                <CardHeader className="bg-gradient-to-r from-indigo-50 to-blue-50 pb-6">
+                  <CardTitle className="text-2xl">Date Range</CardTitle>
+                  <CardDescription>
+                    Select the time period for usage data analysis
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <DateRangePicker onSubmit={handleDateRangeSubmit} />
+                </CardContent>
+              </Card>
+            </div>
 
-          <UsageDisplay 
-            usageData={usageData}
-            isLoading={isLoading}
-            error={error}
-          />
+            {/* Right Column - Usage Data (75% width) */}
+            <div className="lg:w-3/4">
+              <UsageDisplay 
+                usageData={usageData}
+                isLoading={isLoading}
+                error={error}
+              />
+            </div>
+          </div>
         </div>
       </main>
 
