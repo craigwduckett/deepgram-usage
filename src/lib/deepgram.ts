@@ -17,7 +17,7 @@ export interface RequestData {
   created: string;
   path: string;
   api_key_id: string;
-  response: any;
+  response: Record<string, unknown>;
   code: number;
   deployment: string;
   callback: string;
@@ -42,19 +42,24 @@ if (apiKey) {
   console.log('Deepgram client initialized from environment variables');
 }
 
-export const getDeepgramUsage = async (startDate: Date, endDate: Date): Promise<UsageData> => {
+export const getDeepgramUsage = async (
+  startDate: Date,
+  endDate: Date
+): Promise<UsageData> => {
   if (!apiKey) {
-    throw new Error('Deepgram client not initialized. Call initDeepgram first.');
+    throw new Error(
+      'Deepgram client not initialized. Call initDeepgram first.'
+    );
   }
 
   try {
     // Format dates as YYYY-MM-DD for the usage endpoint
     // The usage endpoint might not support full ISO timestamps
     const formattedStartDate = startDate.toISOString().split('T')[0]; // Just the date part: YYYY-MM-DD
-    const formattedEndDate = endDate.toISOString().split('T')[0];     // Just the date part: YYYY-MM-DD
+    const formattedEndDate = endDate.toISOString().split('T')[0]; // Just the date part: YYYY-MM-DD
 
     // Use our proxy server instead of direct API calls
-    
+
     // First, get the projects
     const projectsResponse = await fetch('/api/deepgram/v1/projects', {
       headers: {
@@ -72,12 +77,15 @@ export const getDeepgramUsage = async (startDate: Date, endDate: Date): Promise<
     const projectId = projectsData.projects[0].project_id;
 
     // Now get the usage information
-    const usageResponse = await fetch(`/api/deepgram/v1/projects/${projectId}/usage?start=${formattedStartDate}&end=${formattedEndDate}`, {
-      headers: {
-        'x-api-key': apiKey,
-        'Content-Type': 'application/json',
-      },
-    });
+    const usageResponse = await fetch(
+      `/api/deepgram/v1/projects/${projectId}/usage?start=${formattedStartDate}&end=${formattedEndDate}`,
+      {
+        headers: {
+          'x-api-key': apiKey,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
 
     if (!usageResponse.ok) {
       throw new Error(`Deepgram API Error: ${usageResponse.statusText}`);
@@ -88,13 +96,13 @@ export const getDeepgramUsage = async (startDate: Date, endDate: Date): Promise<
     // Initialize counters
     let requestsCount = 0;
     let hours = 0;
-    
-    results.results.forEach(({requests, total_hours, }: {requests: number, total_hours: number}) => {
-        requestsCount += requests
-        hours += total_hours
-    });
 
-    console.log(hours)
+    for (const { requests, total_hours } of results.results) {
+      requestsCount += requests;
+      hours += total_hours;
+    }
+
+    console.log(hours);
 
     return {
       requestsCount,
@@ -109,17 +117,19 @@ export const getDeepgramUsage = async (startDate: Date, endDate: Date): Promise<
 };
 
 export const getDeepgramRequests = async (
-  endDate: Date, 
-  page: number = 0, // Default to page 0
-  limit: number = 10
+  endDate: Date,
+  page = 0, // Default to page 0
+  limit = 10
 ): Promise<RequestsListResponse> => {
   if (!apiKey) {
-    throw new Error('Deepgram client not initialized. Call initDeepgram first.');
+    throw new Error(
+      'Deepgram client not initialized. Call initDeepgram first.'
+    );
   }
 
   try {
     // Format dates as full UTC ISO timestamps for API request
-    const formattedEndDate = endDate.toISOString();     // Full ISO format: 2025-04-10T23:59:59.999Z
+    const formattedEndDate = endDate.toISOString(); // Full ISO format: 2025-04-10T23:59:59.999Z
 
     // First, get the projects
     const projectsResponse = await fetch('/api/deepgram/v1/projects', {
@@ -159,18 +169,26 @@ export const getDeepgramRequests = async (
   }
 };
 
-export const getDeepgramRequestDetails = async (projectId: string, requestId: string): Promise<RequestData> => {
+export const getDeepgramRequestDetails = async (
+  projectId: string,
+  requestId: string
+): Promise<RequestData> => {
   if (!apiKey) {
-    throw new Error('Deepgram client not initialized. Call initDeepgram first.');
+    throw new Error(
+      'Deepgram client not initialized. Call initDeepgram first.'
+    );
   }
 
   try {
-    const response = await fetch(`/api/deepgram/v1/projects/${projectId}/requests/${requestId}`, {
-      headers: {
-        'x-api-key': apiKey,
-        'Content-Type': 'application/json',
-      },
-    });
+    const response = await fetch(
+      `/api/deepgram/v1/projects/${projectId}/requests/${requestId}`,
+      {
+        headers: {
+          'x-api-key': apiKey,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
 
     if (!response.ok) {
       throw new Error(`Deepgram API Error: ${response.statusText}`);

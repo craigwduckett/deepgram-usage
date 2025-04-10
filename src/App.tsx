@@ -1,15 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import './App.css';
-import { Footer } from './components/Footer';
-import { UsageDisplay } from './components/UsageDisplay';
-import RequestsList from './components/RequestsList';
-import { Button } from './components/ui/button';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from './components/ui/tabs';
-import { UsageData, getDeepgramUsage, initDeepgram } from './lib/deepgram';
-import { Popover, PopoverContent, PopoverTrigger } from './components/ui/popover';
-import { KeyRound, Check } from 'lucide-react';
+import { Check, KeyRound } from 'lucide-react';
+import type { DateRange } from 'react-day-picker';
 import { DateRangePicker } from './components/DateRangePicker';
-import { DateRange } from 'react-day-picker';
+import { Footer } from './components/Footer';
+import RequestsList from './components/RequestsList';
+import { UsageDisplay } from './components/UsageDisplay';
+import { Button } from './components/ui/button';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from './components/ui/popover';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
+import { type UsageData, getDeepgramUsage, initDeepgram } from './lib/deepgram';
 
 // Define the tab types
 type TabType = 'usage' | 'requests';
@@ -21,13 +25,13 @@ function App() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>('usage');
-  
+
   // Store the actual date range for usage tab
   const [dateRange, setDateRange] = useState<DateRange>({
     from: new Date(new Date().setDate(new Date().getDate() - 7)), // Default to last 7 days
-    to: new Date() // Today
+    to: new Date(), // Today
   });
-  
+
   // Store the single date for requests tab (defaults to today)
   const [requestsDate, setRequestsDate] = useState<Date>(new Date());
 
@@ -41,7 +45,9 @@ function App() {
         setIsApiKeySet(true);
         console.log('API key loaded from environment variables');
       } catch (err) {
-        setError('Failed to initialize Deepgram client with environment variable');
+        setError(
+          'Failed to initialize Deepgram client with environment variable'
+        );
         console.error(err);
       }
     }
@@ -69,7 +75,7 @@ function App() {
 
     setIsLoading(true);
     setError(null);
-    
+
     // Update both range and single date
     setDateRange({ from: startDate, to: endDate });
     // When a range is selected in usage tab, use the end date for request details tab
@@ -90,14 +96,17 @@ function App() {
   const handleRequestsDateSubmit = (endDate: Date) => {
     // Store the selected date
     setRequestsDate(endDate);
-    
+
     // If the date is within the date range, don't need to update
     // If outside the range, update the range end date to match
     if (dateRange.from && dateRange.to) {
       const requestDatetime = endDate.getTime();
-      if (requestDatetime < dateRange.from.getTime() || requestDatetime > dateRange.to.getTime()) {
+      if (
+        requestDatetime < dateRange.from.getTime() ||
+        requestDatetime > dateRange.to.getTime()
+      ) {
         // If outside the current range, update the range to include this date
-        setDateRange(prev => ({ ...prev, to: endDate }));
+        setDateRange((prev) => ({ ...prev, to: endDate }));
       }
     }
   };
@@ -114,15 +123,18 @@ function App() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">     
+    <div className="flex min-h-screen flex-col bg-background">
       <main className="flex-1 py-6">
         <div className="container mx-auto max-w-7xl px-6">
           <div className="mb-6 text-center">
             <div className="flex justify-between items-center mb-4">
               <h1 className="text-4xl font-bold text-gray-800">
-                <span className="bg-gradient-to-r from-indigo-600 to-blue-500 bg-clip-text text-transparent">Deepgram</span> Usage Dashboard
+                <span className="bg-gradient-to-r from-indigo-600 to-blue-500 bg-clip-text text-transparent">
+                  Deepgram
+                </span>{' '}
+                Usage Dashboard
               </h1>
-              
+
               {/* API Key Configuration Popover */}
               <Popover>
                 <PopoverTrigger asChild>
@@ -142,10 +154,14 @@ function App() {
                   <div className="space-y-4">
                     <div className="font-medium">API Key Configuration</div>
                     <p className="text-xs text-muted-foreground">
-                      Enter your Deepgram API key to start tracking usage metrics
+                      Enter your Deepgram API key to start tracking usage
+                      metrics
                     </p>
                     {!isApiKeySet ? (
-                      <form onSubmit={handleApiKeySubmit} className="flex flex-col space-y-2">
+                      <form
+                        onSubmit={handleApiKeySubmit}
+                        className="flex flex-col space-y-2"
+                      >
                         <input
                           type="password"
                           value={apiKey}
@@ -154,8 +170,8 @@ function App() {
                           className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-200"
                           required
                         />
-                        <Button 
-                          type="submit" 
+                        <Button
+                          type="submit"
                           size="sm"
                           className="bg-gradient-to-r from-indigo-600 to-blue-500 text-white"
                         >
@@ -168,7 +184,7 @@ function App() {
                           <Check className="mr-2 h-4 w-4" />
                           <span>API Key set successfully</span>
                         </div>
-                        <Button 
+                        <Button
                           variant="outline"
                           size="sm"
                           onClick={resetApiKey}
@@ -181,11 +197,12 @@ function App() {
                 </PopoverContent>
               </Popover>
             </div>
-            
+
             <p className="mt-2 text-lg text-slate-600">
-              Track your Deepgram API usage metrics and optimize your speech-to-text implementation
+              Track your Deepgram API usage metrics and optimize your
+              speech-to-text implementation
             </p>
-            <div className='mt-5'>
+            <div className="mt-5">
               <a
                 href="https://github.com/deepgram/deepgram-js-sdk"
                 target="_blank"
@@ -203,25 +220,28 @@ function App() {
               <div className="bg-white rounded-lg border shadow-sm p-4">
                 <div className="flex flex-col">
                   <h3 className="text-lg font-medium mb-2">
-                    {activeTab === 'usage' ? 'Select Date Range' : 'Select Date'}
+                    {activeTab === 'usage'
+                      ? 'Select Date Range'
+                      : 'Select Date'}
                   </h3>
                   <p className="text-sm text-muted-foreground mb-4">
-                    {activeTab === 'usage' 
-                      ? 'Choose a time period to analyze your Deepgram usage metrics' 
-                      : 'Choose a date to see request details for a 24-hour period'
-                    }
+                    {activeTab === 'usage'
+                      ? 'Choose a time period to analyze your Deepgram usage metrics'
+                      : 'Choose a date to see request details for a 24-hour period'}
                   </p>
-                  
+
                   {activeTab === 'usage' ? (
-                    <DateRangePicker 
-                      onSubmit={handleDateRangeSubmit} 
+                    <DateRangePicker
+                      onSubmit={handleDateRangeSubmit}
                       mode="range"
                       buttonText="Get Usage Data"
                       initialDateRange={dateRange}
                     />
                   ) : (
-                    <DateRangePicker 
-                      onSubmit={(startDate, endDate) => handleRequestsDateSubmit(endDate)} 
+                    <DateRangePicker
+                      onSubmit={(startDate, endDate) =>
+                        handleRequestsDateSubmit(endDate)
+                      }
                       mode="single"
                       buttonText="Get Request Details"
                       initialDate={requestsDate}
@@ -231,11 +251,11 @@ function App() {
               </div>
             ) : null}
           </div>
-          
+
           <div className="w-full">
             {isApiKeySet ? (
-              <Tabs 
-                defaultValue="usage" 
+              <Tabs
+                defaultValue="usage"
                 value={activeTab}
                 onValueChange={handleTabChange}
                 className="mb-6"
@@ -246,17 +266,17 @@ function App() {
                     <TabsTrigger value="requests">Request Details</TabsTrigger>
                   </TabsList>
                 </div>
-                
+
                 <TabsContent value="usage">
-                  <UsageDisplay 
+                  <UsageDisplay
                     usageData={usageData}
                     isLoading={isLoading}
                     error={error}
                   />
                 </TabsContent>
-                
+
                 <TabsContent value="requests">
-                  <RequestsList 
+                  <RequestsList
                     endDate={requestsDate}
                     onDateRangeChange={handleRequestsDateSubmit}
                   />
@@ -264,7 +284,9 @@ function App() {
               </Tabs>
             ) : (
               <div className="text-center p-10 bg-gray-50 rounded-lg border border-gray-100 shadow-sm">
-                <h3 className="text-lg font-medium mb-2">Set your API key to start</h3>
+                <h3 className="text-lg font-medium mb-2">
+                  Set your API key to start
+                </h3>
                 <p className="text-muted-foreground mb-4">
                   Configure your API key to view your Deepgram usage statistics
                 </p>
