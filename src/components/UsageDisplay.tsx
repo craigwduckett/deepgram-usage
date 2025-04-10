@@ -131,7 +131,12 @@ export function UsageDisplay({ usageData, isLoading, error }: UsageDisplayProps)
       <CardHeader>
         <CardTitle className="text-xl text-primary-900">Deepgram Usage Metrics</CardTitle>
         <CardDescription>
-          <span className="font-medium text-primary-600">{usageData.startDate}</span> to <span className="font-medium text-primary-600">{usageData.endDate}</span>
+          <span className="font-medium text-primary-600">
+            {new Date(usageData.startDate).toLocaleDateString()}
+          </span> to <span className="font-medium text-primary-600">
+            {new Date(usageData.endDate).toLocaleDateString()}
+          </span>
+          <span className="ml-2 text-sm text-muted-foreground">({daysInRange} days)</span>
         </CardDescription>
       </CardHeader>
       <CardContent className="px-6 pb-4 pt-0">

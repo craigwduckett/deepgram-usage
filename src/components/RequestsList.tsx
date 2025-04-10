@@ -1,29 +1,59 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { RequestData, RequestsListResponse, getDeepgramRequests } from "../lib/deepgram";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "./ui/card";
 import { Button } from "./ui/button";
 import RequestDetails from "./RequestDetails.tsx";
+import { formatApiPath } from "../lib/utils";
+import {
+  ColumnDef,
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "./ui/table";
 
 interface RequestsListProps {
-  startDate: Date;
+  // Only use endDate for requests list
   endDate: Date;
+  onDateRangeChange?: (endDate: Date) => void;
 }
 
-export default function RequestsList({ startDate, endDate }: RequestsListProps) {
+export default function RequestsList({ endDate, onDateRangeChange }: RequestsListProps) {
   const [requestsData, setRequestsData] = useState<RequestsListResponse | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [currentPage, setCurrentPage] = useState<number>(0); // Start at page 0
   const [selectedRequest, setSelectedRequest] = useState<RequestData | null>(null);
+  const pageLimit = 100; // Fixed page limit of 100
   
-  const loadRequests = async (page: number = 1) => {
+  const loadRequests = async (page: number = 0) => {
     setIsLoading(true);
     setError(null);
     
     try {
-      const data = await getDeepgramRequests(startDate, endDate, page, 10);
-      setRequestsData(data);
-      setCurrentPage(page);
+      // For requests, we only use endDate and calculate startDate as 24 hours before
+      const startDate = new Date(endDate);
+      startDate.setDate(startDate.getDate() - 1); // Go back 1 day from end date
+      
+      // API requests will use ISO format dates (handled by deepgram.ts)
+      const data = await getDeepgramRequests(endDate, page, pageLimit);
+      
+      // Sort requests by created date in descending order (newest first)
+      const sortedRequests = [...data.requests].sort((a, b) => {
+        return new Date(b.created).getTime() - new Date(a.created).getTime();
+      });
+      
+      setRequestsData({
+        ...data,
+        requests: sortedRequests
+      });
     } catch (err) {
       console.error("Error fetching requests:", err);
       setError(err instanceof Error ? err.message : "An unknown error occurred");
@@ -32,9 +62,33 @@ export default function RequestsList({ startDate, endDate }: RequestsListProps) 
     }
   };
   
+  // Handle going to newer page (page - 1, can't go below 0)
+  const handleNewerPage = () => {
+    if (currentPage > 0) {
+      const newPage = currentPage - 1;
+      setCurrentPage(newPage);
+      loadRequests(newPage);
+    }
+  };
+  
+  // Handle going to older page (page + 1)
+  const handleOlderPage = () => {
+    const newPage = currentPage + 1;
+    setCurrentPage(newPage);
+    loadRequests(newPage);
+  };
+  
   useEffect(() => {
-    loadRequests(1);
-  }, [startDate, endDate]);
+    // Reset to page 0 when endDate changes
+    setCurrentPage(0);
+    loadRequests(0);
+    
+    // If we're displaying details for a request, go back to the list view
+    // when the date changes to ensure consistent behavior
+    if (selectedRequest) {
+      setSelectedRequest(null);
+    }
+  }, [endDate]);
   
   const handleRequestClick = (request: RequestData) => {
     setSelectedRequest(request);
@@ -44,9 +98,78 @@ export default function RequestsList({ startDate, endDate }: RequestsListProps) 
     setSelectedRequest(null);
   };
   
-  const handlePageChange = (page: number) => {
-    loadRequests(page);
-  };
+  // Define table columns with useMemo to avoid recreating on every render
+  const columns = useMemo<ColumnDef<RequestData>[]>(
+    () => [
+      {
+        accessorKey: "created",
+        header: "Created",
+        cell: ({ row }) => {
+          const created: string = row.getValue("created");
+          const date = new Date(created);
+          
+          // Display in local time format
+          return <div title={`UTC: ${date.toISOString().replace('T', ' ').substring(0, 19)} UTC`}>
+            {date.toLocaleString()}
+          </div>;
+        },
+      },
+      {
+        accessorKey: "path",
+        header: "Path",
+        cell: ({ row }) => {
+          const path: string = row.getValue("path");
+          const { displayPath, tooltip } = formatApiPath(path);
+          return (
+            <div className="max-w-[200px] truncate" title={tooltip}>
+              {displayPath}
+            </div>
+          );
+        },
+      },
+      {
+        accessorKey: "code",
+        header: "Status",
+        cell: ({ row }) => {
+          const requestData = row.original;
+          const statusCode = requestData.response?.code || requestData.code;
+          
+          return (
+            <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
+              statusCode === 200
+                ? 'bg-green-100 text-green-800' 
+                : 'bg-red-100 text-red-800'
+            }`}>
+              {statusCode}
+            </span>
+          );
+        },
+      },
+      {
+        id: "actions",
+        header: "Actions",
+        cell: ({ row }) => {
+          return (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => handleRequestClick(row.original)}
+            >
+              View Details
+            </Button>
+          );
+        },
+      },
+    ],
+    []
+  );
+  
+  // Always call useReactTable hook, but with empty data if needed
+  const table = useReactTable({
+    data: requestsData?.requests || [],
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+  });
   
   if (selectedRequest) {
     return <RequestDetails request={selectedRequest} onBack={handleBackToList} />;
@@ -115,80 +238,83 @@ export default function RequestsList({ startDate, endDate }: RequestsListProps) 
     <Card className="h-full">
       <CardHeader>
         <CardTitle className="text-xl text-primary-900">Deepgram Requests</CardTitle>
-        <CardDescription>
-          <span className="font-medium text-primary-600">{startDate.toISOString().split('T')[0]}</span> to <span className="font-medium text-primary-600">{endDate.toISOString().split('T')[0]}</span>
+        <CardDescription className="flex flex-col gap-2">
+          <div>
+            Showing requests for {endDate.toLocaleDateString()} (24-hour period)
+          </div>
         </CardDescription>
       </CardHeader>
       <CardContent className="px-6 pb-4 pt-0">
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="border-b text-left text-sm font-medium text-muted-foreground">
-                <th className="pb-2 pt-3">Request ID</th>
-                <th className="pb-2 pt-3">Created</th>
-                <th className="pb-2 pt-3">Path</th>
-                <th className="pb-2 pt-3">Status</th>
-                <th className="pb-2 pt-3">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {requestsData.requests.map((request) => (
-                <tr 
-                  key={request.request_id} 
-                  className="border-b hover:bg-muted/50"
-                >
-                  <td className="py-3 text-sm">{request.request_id.substring(0, 12)}...</td>
-                  <td className="py-3 text-sm">{new Date(request.created).toLocaleString()}</td>
-                  <td className="py-3 text-sm">{request.path}</td>
-                  <td className="py-3 text-sm">
-                    <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
-                      request.code >= 200 && request.code < 300 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {request.code}
-                    </span>
-                  </td>
-                  <td className="py-3 text-sm">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => handleRequestClick(request)}
-                    >
-                      View Details
-                    </Button>
-                  </td>
-                </tr>
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <TableHead key={header.id}>
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                    </TableHead>
+                  ))}
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableHeader>
+            <TableBody>
+              {requestsData.requests.length > 0 ? (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow
+                    key={row.id}
+                    data-state={row.getIsSelected() && "selected"}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={columns.length} className="h-24 text-center">
+                    No results.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
         </div>
         
-        {/* Pagination */}
-        <div className="mt-6 flex items-center justify-between">
+        {/* API-based Pagination */}
+        <div className="mt-6 flex items-center justify-center space-x-6">
           <Button 
             variant="outline" 
             size="sm" 
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage === 1}
+            onClick={handleNewerPage}
+            disabled={currentPage === 0} // Disable if on first page
           >
-            Previous
+            Newer
           </Button>
+          
           <span className="text-sm text-muted-foreground">
-            Page {currentPage}
+            Page {currentPage + 1}
           </span>
+          
           <Button 
             variant="outline" 
             size="sm" 
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={requestsData.requests.length < requestsData.limit}
+            onClick={handleOlderPage}
+            disabled={requestsData.requests.length < pageLimit} // Disable if current page has fewer items than limit
           >
-            Next
+            Older
           </Button>
         </div>
       </CardContent>
       <CardFooter className="border-t px-6 pt-4 text-xs text-muted-foreground">
-        <p>Showing {requestsData.requests.length} of {requestsData.requests.length} requests</p>
+        <p>Showing {requestsData.requests.length} requests (max 100 per page)</p>
       </CardFooter>
     </Card>
   );

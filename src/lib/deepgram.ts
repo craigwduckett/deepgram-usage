@@ -48,9 +48,10 @@ export const getDeepgramUsage = async (startDate: Date, endDate: Date): Promise<
   }
 
   try {
-    // Format dates for API request
-    const formattedStartDate = startDate.toISOString().split('T')[0];
-    const formattedEndDate = endDate.toISOString().split('T')[0];
+    // Format dates as YYYY-MM-DD for the usage endpoint
+    // The usage endpoint might not support full ISO timestamps
+    const formattedStartDate = startDate.toISOString().split('T')[0]; // Just the date part: YYYY-MM-DD
+    const formattedEndDate = endDate.toISOString().split('T')[0];     // Just the date part: YYYY-MM-DD
 
     // Use our proxy server instead of direct API calls
     
@@ -108,9 +109,8 @@ export const getDeepgramUsage = async (startDate: Date, endDate: Date): Promise<
 };
 
 export const getDeepgramRequests = async (
-  startDate: Date, 
   endDate: Date, 
-  page: number = 1, 
+  page: number = 0, // Default to page 0
   limit: number = 10
 ): Promise<RequestsListResponse> => {
   if (!apiKey) {
@@ -118,9 +118,8 @@ export const getDeepgramRequests = async (
   }
 
   try {
-    // Format dates for API request
-    const formattedStartDate = startDate.toISOString().split('T')[0];
-    const formattedEndDate = endDate.toISOString().split('T')[0];
+    // Format dates as full UTC ISO timestamps for API request
+    const formattedEndDate = endDate.toISOString();     // Full ISO format: 2025-04-10T23:59:59.999Z
 
     // First, get the projects
     const projectsResponse = await fetch('/api/deepgram/v1/projects', {
@@ -138,9 +137,9 @@ export const getDeepgramRequests = async (
     // Use the first project in the list
     const projectId = projectsData.projects[0].project_id;
 
-    // Now get the requests information
+    // Now get the requests information with zero-based page index
     const requestsResponse = await fetch(
-      `/api/deepgram/v1/projects/${projectId}/requests?start=${formattedStartDate}&end=${formattedEndDate}&page=${page}&limit=${limit}`,
+      `/api/deepgram/v1/projects/${projectId}/requests?end=${formattedEndDate}&page=${page}&limit=${limit}`,
       {
         headers: {
           'x-api-key': apiKey,
