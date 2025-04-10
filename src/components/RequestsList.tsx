@@ -105,13 +105,7 @@ export default function RequestsList({
     // Reset to page 0 when endDate changes
     setCurrentPage(0);
     loadRequests(0);
-
-    // If we're displaying details for a request, go back to the list view
-    // when the date changes to ensure consistent behavior
-    if (selectedRequest) {
-      setSelectedRequest(null);
-    }
-  }, [loadRequests, selectedRequest]);
+  }, [loadRequests]); // Only depend on loadRequests, which has endDate in its dependencies
 
   const handleRequestClick = useCallback((request: RequestData) => {
     setSelectedRequest(request);
